@@ -2,9 +2,24 @@ import uuid
 
 from django.db import models
 from django.db.models import Q
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
 
 # Create your models here.
 # Models TEAM
+
+class TeamQuerySet(models.QuerySet):
+    def all(self):
+        return self.order_by('-total_points', 'name')
+
+
+class TeamManager(models.Manager):
+    def get_queryset(self, *args, **kwargs):
+        return TeamQuerySet(self.model, using=self._db)
+
+    def all(self):
+        return self.get_queryset().all()
 
 
 class Team(models.Model):
@@ -14,18 +29,26 @@ class Team(models.Model):
         "LOSE THE MATCH": 0,
         "DRAW THE MATCH": 1
     }
-
     name = models.CharField(max_length=150, unique=True)
+    total_points = models.IntegerField(default=0)
     created_date = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     updated_date = models.DateField(blank=True, null=True)
+    objects = TeamManager()
 
     @classmethod
-    def total_points(cls):
-        list_match = Match.objects.filter((Q(team_a=cls) | Q(team_b=cls)))
+    def get_total_points(cls, id):
         total_points = 0
-        for match in list_match:
+        point_a = 0
+        point_b = 0
+        team = cls.objects.get(id=id)
+        list_matches = Match.objects.filter((Q(team_a=team) | Q(team_b=team)))
+        for match in list_matches:
             result_team_a, result_team_b = match.result_team
-            total_points += (cls.dict_points.get(result_team_a) + cls.dict_points.get(result_team_b))
+            if match.team_a == team:
+                point_a = cls.dict_points.get(result_team_a)
+            elif match.team_b == team:
+                point_b = cls.dict_points.get(result_team_b)
+            total_points += (point_a + point_b)
         return total_points
 
     def __str__(self):
@@ -33,6 +56,10 @@ class Team(models.Model):
 
 
 class Match(models.Model):
+    """
+        in this case one match only two teams
+    """
+
     match_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_index=True)
     team_a = models.ForeignKey(
         Team,
@@ -51,7 +78,6 @@ class Match(models.Model):
 
     @property
     def result_team(self):
-        result_team_a, result_team_b = ("DRAW THE MATCH", "DRAW THE MATCH")
         if self.score_a > self.score_b:
             result_team_a, result_team_b = ("WIN THE MATCH", "LOSE THE MATCH")
         elif self.score_a < self.score_b:
@@ -62,3 +88,17 @@ class Match(models.Model):
 
     def __str__(self):
         return self.match_id
+
+
+@receiver(post_save, sender=Match)
+def create_match(sender, created, instance, **kwargs):
+    # Update Team A and Team B points
+    point_a = instance.team_a.get_total_points(instance.team_a.id)
+    point_b = instance.team_b.get_total_points(instance.team_b.id)
+
+    instance.team_a.total_points = point_a
+    instance.team_a.save()
+    instance.team_b.total_points = point_b
+    instance.team_b.save()
+    return instance
+
