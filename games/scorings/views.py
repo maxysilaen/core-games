@@ -1,10 +1,7 @@
 import csv
 import io
-
-from django.shortcuts import render
 from rest_framework import (
     viewsets,
-    mixins,
     status
 )
 from rest_framework.authentication import TokenAuthentication
@@ -13,7 +10,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Team, Match
-from .serializers import TeamSerializer, MatchSerializer, MatchUploadSerializer
+from .serializers import (TeamSerializer,
+                          MatchSerializer,
+                          MatchUploadSerializer)
 
 # Create your views here.
 
@@ -29,7 +28,7 @@ class TeamViewSet(viewsets.ModelViewSet):
 class MatchViewSet(viewsets.ModelViewSet):
     """Base viewset for recipe attributes"""
     serializer_class = MatchSerializer
-    queryset = Match.objects.all().order_by('-created_date')
+    queryset = Match.objects.all()
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 

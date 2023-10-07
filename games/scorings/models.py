@@ -55,6 +55,19 @@ class Team(models.Model):
         return self.name
 
 
+class MatchQuerySet(models.QuerySet):
+    def all(self):
+        return self.order_by('-created_date')
+
+
+class MatchManager(models.Manager):
+    def get_queryset(self, *args, **kwargs):
+        return MatchQuerySet(self.model, using=self._db)
+
+    def all(self):
+        return self.get_queryset().all()
+
+
 class Match(models.Model):
     """
         in this case one match only two teams
@@ -75,6 +88,7 @@ class Match(models.Model):
     score_b = models.IntegerField()
     created_date = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     updated_date = models.DateField(blank=True, null=True)
+    objects = MatchManager()
 
     @property
     def result_team(self):

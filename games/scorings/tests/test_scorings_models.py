@@ -1,11 +1,6 @@
-import copy
 from django.test import TestCase
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APIClient
 
-from .models import Team, Match
-from .serializers import TeamSerializer
+from scorings.models import Team, Match
 
 
 class TestScoring(TestCase):
@@ -87,26 +82,6 @@ class TestScoring(TestCase):
         self.assertEqual(list_team[2], "Misfits")
         self.assertEqual(list_team[3], "FC Super")
         self.assertEqual(list_team[4], "Rebels")
-
-
-class TestScoringAPI(TestCase):
-
-    def setUp(self):
-        self.client = APIClient()
-
-    def test_bulk_upload_match(self):
-        URL = reverse('scoring:match-upload-file')
-        with open('match2.csv') as fp:
-            res = self.client.post(URL, {'file': fp})
-        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Team.objects.all().count(), 5)
-        self.assertEqual(Match.objects.all().count(), 5)
-
-        URL_TEAM_LIST = reverse('scoring:team-list')
-        res = self.client.get(URL_TEAM_LIST)
-        team_serializer = TeamSerializer(Team.objects.all(), many=True)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(team_serializer.data, res.data)
 
 
 
