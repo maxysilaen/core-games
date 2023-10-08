@@ -62,11 +62,11 @@ class TestScoring(TestCase):
         self.assertEqual(list_team[4], "Misfits")
 
     def test_total_points(self):
-        self.assertEqual(self.team_fantastics.get_total_points(self.team_fantastics.id), 6)
-        self.assertEqual(self.team_crazy_ones.get_total_points(self.team_crazy_ones.id), 5)
-        self.assertEqual(self.team_fc_super.get_total_points(self.team_fc_super.id), 1)
-        self.assertEqual(self.team_rebels.get_total_points(self.team_rebels.id), 1)
-        self.assertEqual(self.team_misfits.get_total_points(self.team_misfits.id), 0)
+        self.assertEqual(self.team_fantastics.get_total_points(), 6)
+        self.assertEqual(self.team_crazy_ones.get_total_points(), 5)
+        self.assertEqual(self.team_fc_super.get_total_points(), 1)
+        self.assertEqual(self.team_rebels.get_total_points(), 1)
+        self.assertEqual(self.team_misfits.get_total_points(), 0)
 
     def test_add_new_match(self):
         new_match_score = {

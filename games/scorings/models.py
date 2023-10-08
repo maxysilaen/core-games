@@ -35,19 +35,17 @@ class Team(models.Model):
     updated_date = models.DateField(blank=True, null=True)
     objects = TeamManager()
 
-    @classmethod
-    def get_total_points(cls, id):
+    def get_total_points(self):
         total_points = 0
         point_a = 0
         point_b = 0
-        team = cls.objects.get(id=id)
-        list_matches = Match.objects.filter((Q(team_a=team) | Q(team_b=team)))
+        list_matches = Match.objects.filter((Q(team_a=self) | Q(team_b=self)))
         for match in list_matches:
             result_team_a, result_team_b = match.result_team
-            if match.team_a == team:
-                point_a = cls.dict_points.get(result_team_a)
-            elif match.team_b == team:
-                point_b = cls.dict_points.get(result_team_b)
+            if match.team_a == self:
+                point_a = self.dict_points.get(result_team_a)
+            elif match.team_b == self:
+                point_b = self.dict_points.get(result_team_b)
             total_points += (point_a + point_b)
         return total_points
 
@@ -106,9 +104,9 @@ class Match(models.Model):
 
 @receiver(post_save, sender=Match)
 def create_match(sender, created, instance, **kwargs):
-    # Update Team A and Team B points
-    point_a = instance.team_a.get_total_points(instance.team_a.id)
-    point_b = instance.team_b.get_total_points(instance.team_b.id)
+    # Update Team A and Team B points every match has been updated or created
+    point_a = instance.team_a.get_total_points()
+    point_b = instance.team_b.get_total_points()
 
     instance.team_a.total_points = point_a
     instance.team_a.save()
