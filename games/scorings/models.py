@@ -40,13 +40,14 @@ class Team(models.Model):
         point_a = 0
         point_b = 0
         list_matches = Match.objects.filter((Q(team_a=self) | Q(team_b=self)))
-        for match in list_matches:
-            result_team_a, result_team_b = match.result_team
-            if match.team_a == self:
-                point_a = self.dict_points.get(result_team_a)
-            elif match.team_b == self:
-                point_b = self.dict_points.get(result_team_b)
-            total_points += (point_a + point_b)
+        if list_matches.exists():
+            for match in list_matches:
+                result_team_a, result_team_b = match.result_team
+                if match.team_a == self:
+                    point_a = self.dict_points.get(result_team_a)
+                elif match.team_b == self:
+                    point_b = self.dict_points.get(result_team_b)
+                total_points += (point_a + point_b)
         return total_points
 
     def __str__(self):
@@ -94,7 +95,7 @@ class Match(models.Model):
             result_team_a, result_team_b = ("WIN THE MATCH", "LOSE THE MATCH")
         elif self.score_a < self.score_b:
             result_team_a, result_team_b = ("LOSE THE MATCH", "WIN THE MATCH")
-        elif self.score_a == self.score_b:
+        else:
             result_team_a, result_team_b = ("DRAW THE MATCH", "DRAW THE MATCH")
         return result_team_a, result_team_b
 
@@ -105,12 +106,12 @@ class Match(models.Model):
 @receiver(post_save, sender=Match)
 def create_match(sender, created, instance, **kwargs):
     # Update Team A and Team B points every match has been updated or created
-    point_a = instance.team_a.get_total_points()
-    point_b = instance.team_b.get_total_points()
-
-    instance.team_a.total_points = point_a
-    instance.team_a.save()
-    instance.team_b.total_points = point_b
-    instance.team_b.save()
+    obj_team_a = instance.team_a
+    obj_team_b = instance.team_b
+    point_a = obj_team_a.get_total_points()
+    point_b = obj_team_b.get_total_points()
+    obj_team_a.total_points = point_a
+    obj_team_a.save()
+    obj_team_b.total_points = point_b
+    obj_team_b.save()
     return instance
-
